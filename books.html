@@ -1,15 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Book Page</title>
 </head>
+
 <body>
     <nav>
         <a href="index.html">Home</a>
         <a href="admin.html">Admin</a>
         <a href="books.html">Books</a>
     </nav>
+    <h1>User Book Page</h1>
+    <button onclick="showAvailableBooks()">Show AVailable Books</button>
+    <button onclick="showBorrowedBooks()">Show Borrowed Books</button>
+    <div id="booksGrid"></div>
+    <script>
+        const loginData = JSON.parse(localStorage.getItem('loginData'));
+        if (!loginData || loginData.email !== 'user@empher.com') {
+            alert('User not logged in');
+            window.location.href = 'index';
+        }
+        const booksGrid = document.getElementById('booksGrid');
+        async function fetchBooks(filter) {
+            const response = await fetch('http://localhost:3000/books');
+            const books = await response.json();
+            displayBooks(books.filter(filter));
+        }
+        function displayBooks(books) {
+            booksGrid.innerHTML = '';
+            books.forEach((book) => {
+                const bookCard = document.createElement('div');
+                bookCard.className = 'bookCard';
+                bookCard.innerHTML = `
+                <h4>${book.title}</h4>
+                <p> Author: ${book.author} </p>
+                <p> Category: ${book.category}</p>
+                <p> Available: ${book.isAvailable}</p>
+                <button onclick="borrowBook(${book.id})" $ {book.isAvailable ? '': 'disabled'}>
+                    Borrow Book
+                </button> 
+                `;
+                booksGrid.appendchild(bookCard);
+            });
+        }
+        async function borrowBook(id) {
+            const days = prompt('Enter borrowing days (max 10):');
+            if (days > 0 && days <= 10) {
+                const response = await fetch('http://localhost:3000/books/${id}', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isAvailable: false, borrowedDays: days }),
+                });
+                if (response.ok) {
+                    alert('Book borrowed successfully');
+                    fetchBooks((book) => book.isAvailable);
+                }
+            } else {
+                alert('Invalid nummber of days');
+            }
+        }
+        async function showAvailableBooks() {
+            fetchBooks((book) => book.isAvailable);
+        }
+        async function showBorrowedBooks() {
+            fetchBooks((book) => !book.isAvailable);
+        }
+    </script>
 </body>
+
 </html>
